@@ -1,0 +1,57 @@
+import re
+import pandas as pd
+from collections import Counter
+import matplotlib.pyplot as plt
+from anomaly_detector import detect_anomalies
+
+LOG_FILE = "sample.log"
+
+def parse_logs():
+    ip_list = []
+
+    with open(LOG_FILE, "r") as file:
+        for line in file:
+            match = re.match(r"(\d+\.\d+\.\d+\.\d+)", line)
+            if match:
+                ip_list.append(match.group(1))
+
+    return ip_list
+
+def analyze_logs():
+    ip_list = parse_logs()
+    ip_count = Counter(ip_list)
+
+    df = pd.DataFrame(ip_count.items(), columns=["IP", "Requests"])
+    df = df.sort_values(by="Requests", ascending=False)
+
+    print("\nTop IP Addresses:")
+    print(df.head())
+
+    # Visualization
+    df.head(5).plot(kind="bar", x="IP", y="Requests", legend=False)
+    plt.title("Top 5 IP Request Frequency")
+    plt.savefig("log_stats.png")
+    plt.close()
+
+    detect_anomalies(ip_count)
+
+if __name__ == "__main__":
+    analyze_logs()\
+
+def detect_anomalies(ip_count, threshold=100):
+    print("\n--- Anomaly Detection Report ---")
+
+    for ip, count in ip_count.items():
+        if count > threshold:
+            print(f"⚠ Suspicious Activity Detected: {ip} → {count} requests")
+
+    print("Analysis Complete.")
+
+192.168.1.10 - GET /index.html
+192.168.1.10 - GET /login
+10.0.0.5 - POST /api
+192.168.1.10 - GET /dashboard
+10.0.0.8 - GET /home
+
+pandas
+matplotlib
